@@ -39,10 +39,7 @@ if __name__ == '__main__':
 
     model = GLUETransformer(**vars(args))
 
-    raise NotImplementedError("Not implemented yet.")
-    # model = model_class(vars(args))
-
-    wandb_logger = WandbLogger(project=args.wandb_project_name)
+    # wandb_logger = WandbLogger(project=args.wandb_project_name)
     # wandb_logger.watch(model, log='gradients', log_freq=100)
 
     # model.build_metrics()
@@ -58,9 +55,7 @@ if __name__ == '__main__':
     trainer = pl.Trainer.from_argparse_args(
         args,
         callbacks=[lr_monitor], #checkpoint_callback
-        logger=wandb_logger,
+        # logger=wandb_logger,
         precision=args.precision,
-        stochastic_weight_avg=True
     )
-
     trainer.fit(model, datamodule)

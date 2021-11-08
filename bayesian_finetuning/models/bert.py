@@ -3,13 +3,11 @@ from typing import Optional
 
 import datasets
 import torch
-from pytorch_lightning import LightningDataModule, LightningModule, Trainer, seed_everything
-from torch.utils.data import DataLoader
+from pytorch_lightning import LightningModule
 from transformers import (
     AdamW,
     AutoConfig,
     AutoModelForSequenceClassification,
-    AutoTokenizer,
     get_linear_schedule_with_warmup,
 )
 
@@ -34,6 +32,7 @@ class GLUETransformer(LightningModule):
 
         self.config = AutoConfig.from_pretrained(model_name_or_path, num_labels=num_labels)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, config=self.config)
+
         self.metric = datasets.load_metric(
             "glue", self.hparams.task_name, experiment_id=datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         )
@@ -81,16 +80,16 @@ class GLUETransformer(LightningModule):
         self.log_dict(self.metric.compute(predictions=preds, references=labels), prog_bar=True)
         return loss
 
-    def setup(self, stage=None) -> None:
-        if stage != "fit":
-            return
-        # Get dataloader by calling it - train_dataloader() is called after setup() by default
-        train_loader = self.train_dataloader()
-
-        # Calculate total steps
-        tb_size = self.hparams.train_batch_size * max(1, self.trainer.gpus)
-        ab_size = self.trainer.accumulate_grad_batches * float(self.trainer.max_epochs)
-        self.total_steps = (len(train_loader.dataset) // tb_size) // ab_size
+    # def setup(self, stage=None) -> None:
+    #     if stage != "fit":
+    #         return
+    #     # Get dataloader by calling it - train_dataloader() is called after setup() by default
+    #     train_loader = self.train_dataloader()
+    #
+    #     # Calculate total steps
+    #     tb_size = self.hparams.train_batch_size * max(1, self.trainer.gpus)
+    #     ab_size = self.trainer.accumulate_grad_batches * float(self.trainer.max_epochs)
+    #     self.total_steps = (len(train_loader.dataset) // tb_size) // ab_size
 
     def configure_optimizers(self):
         """Prepare optimizer and schedule (linear warmup and decay)"""
@@ -108,10 +107,4 @@ class GLUETransformer(LightningModule):
         ]
         optimizer = AdamW(optimizer_grouped_parameters, lr=self.hparams.learning_rate, eps=self.hparams.adam_epsilon)
 
-        scheduler = get_linear_schedule_with_warmup(
-            optimizer,
-            num_warmup_steps=self.hparams.warmup_steps,
-            num_training_steps=self.total_steps,
-        )
-        scheduler = {"scheduler": scheduler, "interval": "step", "frequency": 1}
-        return [optimizer], [scheduler]
+        return [optimizer]#, [scheduler]
