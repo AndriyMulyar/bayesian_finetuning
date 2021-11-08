@@ -1,0 +1,33 @@
+# python bayesian_finetuning/bin/train.py --config bayesian_finetuning/configs/model.yaml
+
+wandb_project_name: 'finetuning'
+
+training:
+  default_root_dir: '.'
+  log_every_n_steps: 10
+  val_check_interval: 800
+  limit_val_batches: 50
+  gpus: 0 #1
+  accumulate_grad_batches: 1
+  max_epochs: 100
+  deterministic: True
+  data_workers: 4
+  batch_size: 16
+
+prediction:
+  model_path: ''
+
+hparams:
+  model: NucleotideStructureTunerCNN
+  seed: 1234
+  num_nucleotides: 90
+  nucleotide_dim: 4
+  num_nucleotide_filters: 20
+  nucleotide_filter_width: 6
+  structure_dim: 3
+  num_structure_filters: 8
+  structure_filter_width: 30
+  dropout: 0.1
+  learning_rate: 5e-4
+  precision: 32
+
