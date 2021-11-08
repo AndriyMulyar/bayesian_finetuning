@@ -17,7 +17,11 @@ setup(
         "pylint",
         "pytest",
         "attrdict",
-        "joblib"
+        "joblib",
+        "datasets",
+        "transformers",
+        "scipy",
+        "sklearn"
     ],
     include_package_data=True
 )

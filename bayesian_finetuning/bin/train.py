@@ -7,9 +7,9 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-import interpretable_splicing.models as models
-from interpretable_splicing.datamodules.splicing_prediction import SplicingPredictionDatamodule
-from interpretable_splicing.utils.parse_config import parse_config
+from bayesian_finetuning.models import GLUETransformer
+from bayesian_finetuning.datamodules.glue import GLUEDataModule
+from bayesian_finetuning.utils.parse_config import parse_config
 
 if __name__ == '__main__':
     """
@@ -21,28 +21,29 @@ if __name__ == '__main__':
 
     args = parse_config()
 
-    model_class = getattr(models, args.model)
-
     pl.seed_everything(args.seed)
 
-    raise NotImplementedError("Not implemented yet.")
+
 
     # data module
-    datamodule = SplicingPredictionDatamodule(
-        train=(args.train_x_path, args.train_y_path),
-        val=(args.val_x_path, args.val_y_path),
-        test=(args.test_x_path, args.test_y_path),
-        batch_size=args.batch_size,
-        num_workers=args.data_workers,
-        multi_gpu=args.gpus > 1,
+    datamodule = GLUEDataModule(
+        model_name_or_path=args.model_name_or_path,
+        task_name=args.task_name,
+        train_batch_size=args.train_batch_size,
+        eval_batch_size=args.eval_batch_size
     )
 
     datamodule.setup('fit')
+    args.num_labels = datamodule.num_labels
+    args.eval_splits = datamodule.eval_splits
 
-    model = model_class(vars(args))
+    model = GLUETransformer(**vars(args))
+
+    raise NotImplementedError("Not implemented yet.")
+    # model = model_class(vars(args))
 
     wandb_logger = WandbLogger(project=args.wandb_project_name)
-    wandb_logger.watch(model, log='gradients', log_freq=100)
+    # wandb_logger.watch(model, log='gradients', log_freq=100)
 
     # model.build_metrics()
     lr_monitor = LearningRateMonitor(logging_interval='step')
@@ -54,13 +55,9 @@ if __name__ == '__main__':
     #     mode='max',
     # )
 
-    from pytorch_lightning.callbacks import GradientAccumulationScheduler
-
-    batch_size_scheduler = GradientAccumulationScheduler(scheduling={2*k:2**k for k in range(1,10)})
-
     trainer = pl.Trainer.from_argparse_args(
         args,
-        callbacks=[lr_monitor, batch_size_scheduler], #checkpoint_callback
+        callbacks=[lr_monitor], #checkpoint_callback
         logger=wandb_logger,
         precision=args.precision,
         stochastic_weight_avg=True
