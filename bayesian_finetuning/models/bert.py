@@ -43,6 +43,7 @@ class GLUETransformer(LightningModule):
     def training_step(self, batch, batch_idx):
         outputs = self(**batch)
         loss = outputs[0]
+        self.log('train_loss', loss)
         return loss
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0):

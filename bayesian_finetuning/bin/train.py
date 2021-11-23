@@ -39,8 +39,8 @@ if __name__ == '__main__':
 
     model = GLUETransformer(**vars(args))
 
-    # wandb_logger = WandbLogger(project=args.wandb_project_name)
-    # wandb_logger.watch(model, log='gradients', log_freq=100)
+    wandb_logger = WandbLogger(project=args.wandb_project_name)
+    wandb_logger.watch(model, log='gradients', log_freq=100)
 
     # model.build_metrics()
     lr_monitor = LearningRateMonitor(logging_interval='step')
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     trainer = pl.Trainer.from_argparse_args(
         args,
         callbacks=[lr_monitor], #checkpoint_callback
-        # logger=wandb_logger,
+        logger=wandb_logger,
         precision=args.precision,
     )
     trainer.fit(model, datamodule)
