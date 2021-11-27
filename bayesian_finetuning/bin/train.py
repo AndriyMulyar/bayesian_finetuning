@@ -23,8 +23,6 @@ if __name__ == '__main__':
 
     pl.seed_everything(args.seed)
 
-
-
     # data module
     datamodule = GLUEDataModule(
         model_name_or_path=args.model_name_or_path,
@@ -42,19 +40,18 @@ if __name__ == '__main__':
     wandb_logger = WandbLogger(project=args.wandb_project_name)
     wandb_logger.watch(model, log='gradients', log_freq=100)
 
-    # model.build_metrics()
     lr_monitor = LearningRateMonitor(logging_interval='step')
-    # checkpoint_callback = ModelCheckpoint(
-    #     monitor='val_acc',
-    #     dirpath='model/',
-    #     filename=args.model + '_{epoch:02d}_{val_acc:.3f}',
-    #     save_top_k=3,
-    #     mode='max',
-    # )
+    checkpoint_callback = ModelCheckpoint(
+        monitor='accuracy',
+        dirpath='model/',
+        filename=args.task_name + '_{epoch:02d}_{accuracy:.3f}',
+        save_top_k=3,
+        mode='max',
+    )
 
     trainer = pl.Trainer.from_argparse_args(
         args,
-        callbacks=[lr_monitor], #checkpoint_callback
+        callbacks=[lr_monitor, checkpoint_callback],
         logger=wandb_logger,
         precision=args.precision,
     )

@@ -80,7 +80,7 @@ class GLUETransformer(LightningModule):
         self.log("val_loss", loss, prog_bar=True)
         self.log_dict(self.metric.compute(predictions=preds, references=labels), prog_bar=True)
         return loss
-
+    #
     # def setup(self, stage=None) -> None:
     #     if stage != "fit":
     #         return
@@ -107,5 +107,12 @@ class GLUETransformer(LightningModule):
             },
         ]
         optimizer = AdamW(optimizer_grouped_parameters, lr=self.hparams.learning_rate, eps=self.hparams.adam_epsilon)
+        #
+        # scheduler = get_linear_schedule_with_warmup(
+        #     optimizer,
+        #     num_warmup_steps=self.hparams.warmup_steps,
+        #     num_training_steps=self.total_steps,
+        # )
+        # scheduler = {"scheduler": scheduler, "interval": "step", "frequency": 1}
 
         return [optimizer]#, [scheduler]
