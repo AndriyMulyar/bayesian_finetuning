@@ -1,4 +1,4 @@
-# python bayesian_finetuning/bin/train.py --config bayesian_finetuning/configs/tiny_rte.yaml
+# python bayesian_finetuning/bin/train.py --config bayesian_finetuning/configs/mini_rte.yaml
 
 wandb_project_name: 'bayesian_finetuning'
 
@@ -19,7 +19,7 @@ prediction:
   model_path: ''
 
 hparams:
-  model_name_or_path: prajjwal1/bert-tiny
+  model_name_or_path: prajjwal1/bert-mini
   task_name: rte
   seed: 1234
   learning_rate: 2e-5
