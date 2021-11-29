@@ -23,6 +23,7 @@ for key, df in frames_random_init:
 
 
 plt.legend(loc='upper right')
+plt.title("Validation ")
 plt.xlabel("Distance along random ray from MAP solution")
 plt.ylabel(value.capitalize())
 plt.show()

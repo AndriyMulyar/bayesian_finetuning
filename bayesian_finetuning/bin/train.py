@@ -54,5 +54,8 @@ if __name__ == '__main__':
         callbacks=[lr_monitor, checkpoint_callback],
         logger=wandb_logger,
         precision=args.precision,
+        auto_lr_find=True
     )
+
+
     trainer.fit(model, datamodule)
