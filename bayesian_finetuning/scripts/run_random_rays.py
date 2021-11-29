@@ -1,10 +1,16 @@
 import pytorch_lightning as pl
 import torch
 import numpy as np
+import logging
+import transformers
+import json
 from bayesian_finetuning.models.bert import GLUETransformer
 from bayesian_finetuning.datamodules.glue import GLUEDataModule
 
 from random import gauss
+
+transformers.logging.set_verbosity_error()
+pl.utilities.distributed.log.setLevel(logging.ERROR)
 
 def make_rand_vector(dims):
     vec = [gauss(0, 1) for i in range(dims)]
@@ -14,9 +20,13 @@ def make_rand_vector(dims):
 
 def l2(model1, model2):
     return (solution - updated).pow(2).sum(0).sqrt()
+
 if __name__ == "__main__":
 
-    model = GLUETransformer.load_from_checkpoint('model/rte_epoch=09_accuracy=0.650.ckpt')
+    # model = GLUETransformer.load_from_checkpoint('model/finetuned_rte_mini/rte_epoch=09_accuracy=0.650.ckpt')
+    #model = GLUETransformer.load_from_checkpoint('model/random_init_rte_mini/rte_epoch=06_accuracy=0.542.ckpt')
+    # model = GLUETransformer.load_from_checkpoint('model/finetuned_stsb_mini/stsb_epoch=51_pearson=0.860.ckpt')
+    model = GLUETransformer.load_from_checkpoint('model/random_init_stsb_mini/stsb_epoch=58_pearson=0.176.ckpt')
 
     # data module
     datamodule = GLUEDataModule(
@@ -36,11 +46,23 @@ if __name__ == "__main__":
     num_params = solution.size()[0]
 
 
-    random_direction = torch.FloatTensor(make_rand_vector(num_params))
 
-    for i in np.linspace(0,100, 100):
-        updated = solution + random_direction*i
+    output = {}
+    for curve in range(1, 20):
+        random_direction = torch.FloatTensor(make_rand_vector(num_params))
+        points = []
+        for i in np.linspace(0, 100, 200):
+            updated = solution + random_direction*i
 
-        torch.nn.utils.vector_to_parameters(updated, model.parameters())
+            torch.nn.utils.vector_to_parameters(updated, model.parameters())
 
-        x = trainer.validate(model, dataloaders=datamodule.val_dataloader())
+            x = trainer.validate(model, dataloaders=datamodule.val_dataloader())
+            with torch.no_grad():
+                distance = l2(model, solution).item()
+            points.append({**x[0], 'distance': distance})
+        output[f"curve_{curve}"] = points
+
+        with open('random_init_stsb.json', 'w') as fp:
+            json.dump(output, fp)
+
+

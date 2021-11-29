@@ -1,4 +1,4 @@
-# python bayesian_finetuning/bin/train.py --config bayesian_finetuning/configs/mini_rte.yaml
+# python bayesian_finetuning/bin/train.py --config bayesian_finetuning/configs/mini_stsb.yaml
 
 wandb_project_name: 'bayesian_finetuning'
 
@@ -19,9 +19,10 @@ prediction:
   model_path: ''
 
 hparams:
-  model_name_or_path: bert-base-uncased
-  task_name: rte
-  eval_metric: accuracy
+  model_name_or_path: prajjwal1/bert-mini
+  random_init: True
+  task_name: stsb
+  eval_metric: pearson
   seed: 1234
   learning_rate: 2e-5
   precision: 32

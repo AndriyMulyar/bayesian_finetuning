@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
     lr_monitor = LearningRateMonitor(logging_interval='step')
     checkpoint_callback = ModelCheckpoint(
-        monitor='accuracy',
+        monitor=args.eval_metric,
         dirpath='model/',
-        filename=args.task_name + '_{epoch:02d}_{accuracy:.3f}',
+        filename=args.task_name + '_{epoch:02d}_{'+args.eval_metric+':.3f}',
         save_top_k=3,
         mode='max',
     )
