@@ -24,6 +24,11 @@ for key, df in frames_random_init:
 
 plt.legend(loc='upper right')
 plt.title("Validation ")
-plt.xlabel("Distance along random ray from MAP solution")
+plt.xlabel("Distance from MAP solution")
 plt.ylabel(value.capitalize())
+
+from matplotlib.lines import Line2D
+legend_elements = [Line2D([0], [0], color='b', lw=4, label='Line'),Line2D([0], [0], color='g', lw=4, label='Line')]
+
+ax1.legend(legend_elements, ['Finetuned', 'Random Initialization'])
 plt.show()
