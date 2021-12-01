@@ -13,19 +13,23 @@ frames_random_init = [(key, pandas.DataFrame(points)) for key, points in random_
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 
-value = 'val_loss' # or 'val_loss'
+value = 'accuracy' # or 'val_loss'
 for key, df in frames_finetuned:
-    ax1.plot(df['distance'], df[value], c='b', label=f"finetuned_{key}")
+    ax1.plot(df['distance'][:120], df[value][:120], c='b')
 
 for key, df in frames_random_init:
-    ax1.plot(df['distance'], df[value], c='g', label=f"rand_{key}")
+    ax1.plot(df['distance'][:120], df[value][:120], c='g')
 
 
 
 plt.legend(loc='upper right')
-plt.title("Validation ")
+
 plt.xlabel("Distance from MAP solution")
-plt.ylabel(value.capitalize())
+
+if value != 'val_loss':
+    plt.ylabel(value.capitalize())
+else:
+    plt.ylabel("Loss")
 
 from matplotlib.lines import Line2D
 legend_elements = [Line2D([0], [0], color='b', lw=4, label='Line'),Line2D([0], [0], color='g', lw=4, label='Line')]

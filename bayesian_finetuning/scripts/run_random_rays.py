@@ -26,7 +26,9 @@ if __name__ == "__main__":
     # model = GLUETransformer.load_from_checkpoint('model/finetuned_rte_mini/rte_epoch=09_accuracy=0.650.ckpt')
     #model = GLUETransformer.load_from_checkpoint('model/random_init_rte_mini/rte_epoch=06_accuracy=0.542.ckpt')
     # model = GLUETransformer.load_from_checkpoint('model/finetuned_stsb_mini/stsb_epoch=51_pearson=0.860.ckpt')
-    model = GLUETransformer.load_from_checkpoint('model/random_init_stsb_mini/stsb_epoch=58_pearson=0.176.ckpt')
+    # model = GLUETransformer.load_from_checkpoint('model/random_init_stsb_mini/stsb_epoch=58_pearson=0.176.ckpt')
+    # model = GLUETransformer.load_from_checkpoint('model/finetuned_mrcp_mini/mrpc_epoch=55_accuracy=0.792.ckpt')
+    model = GLUETransformer.load_from_checkpoint('model/random_init_mrcp/mrpc_epoch=11_accuracy=0.708.ckpt')
 
     # data module
     datamodule = GLUEDataModule(
@@ -62,7 +64,7 @@ if __name__ == "__main__":
             points.append({**x[0], 'distance': distance})
         output[f"curve_{curve}"] = points
 
-        with open('random_init_stsb.json', 'w') as fp:
+        with open('finetuned_mrpc.json', 'w') as fp:
             json.dump(output, fp)
 
 
