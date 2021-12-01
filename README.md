@@ -7,3 +7,13 @@ Clone down the repository and run:
 ```bash
 make all
 ```
+
+
+# Experiment Replication
+
+### Experiment 1
+Run:
+```bash
+python bayesion_finetuning/bin/experiment_1_stsb.py
+```
+to produce the graph in the project report (from cached data).
