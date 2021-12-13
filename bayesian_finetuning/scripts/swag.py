@@ -1,9 +1,10 @@
-import copy
+import pickle
 import torch
+import time
 import numpy as np
 import pytorch_lightning as pl
 from typing import Callable, List, Optional, Union
-from pytorch_lightning.callbacks import Callback
+from pytorch_lightning.callbacks import Callback, StochasticWeightAveraging
 from bayesian_finetuning.models.bert import GLUETransformer
 from bayesian_finetuning.datamodules.glue import GLUEDataModule
 from bayesian_finetuning.utils.parse_config import parse_config
@@ -57,10 +58,6 @@ class StochasticWeightAveragingGaussian(Callback):
         swa_epoch_start : TODO If provided as int, the procedure will start from
                 the ``swa_epoch_start``-th epoch. If provided as float between 0 and 1,
                 the procedure will start from ``int(swa_epoch_start * max_epochs)`` epoch
-        annealing_epochs :
-        annealing_strategy :
-        avg_fn :
-        device :
         """
 
         self._swa_epoch_start = swa_epoch_start
@@ -70,7 +67,6 @@ class StochasticWeightAveragingGaussian(Callback):
 
         self.theta_i_list = []  # Store \theta_i
         self.theta_bar_i_list = []
-        self.theta_bar_squared_i_list = []
         self.theta_bar_squared_i_list = []  # Store \bar{\theta^2} element wise squared \theta
         self.d_hat = None
         self.sigma_low_rank = None
@@ -114,8 +110,48 @@ class StochasticWeightAveragingGaussian(Callback):
         self.sigma_diag = (self.theta_bar_squared_i_list[-1] - self.theta_bar_i_list[-1] ** 2).detach().numpy()
 
 
+class SWAGDiag(Callback):
+    def __init__(self,
+                 swa_epoch_start: Union[int, float] = 0.8,
+                 c: int = 1,
+                 # k: int = 10,
+                 ):
+
+        self._swa_epoch_start = swa_epoch_start
+        self._c = c
+
+        self.theta_bar = None
+        self.theta_bar_squared = None  # Store \bar{\theta^2} element wise squared \theta
+        self.d_hat = None
+        self.sigma_low_rank = None
+        self.sigma_diags = []
+
+    def on_pretrain_routine_start(self, trainer, pl_module):
+        # Store parameter \theta_0 and the one with element-wise squared
+        theta_0 = torch.nn.utils.parameters_to_vector(pl_module.parameters())
+        theta_sq_0 = torch.zeros(theta_0.shape)
+        for src_param, dst_param in zip(theta_0, theta_sq_0):
+            dst_param = src_param ** 2
+
+        self.theta_bar = theta_0
+        self.theta_bar_squared = theta_sq_0
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        epoch = pl_module.current_epoch + 1
+        if epoch % self._c == 0:
+            n = epoch / self._c
+
+            theta_i = torch.nn.utils.parameters_to_vector(pl_module.parameters())
+
+            self.theta_bar = (n * self.theta_bar + theta_i) / (n + 1)
+            self.theta_bar_squared = (n * self.theta_bar_squared + theta_i ** 2) / (n + 1)
+            self.sigma_diags.append(self.theta_bar_squared - self.theta_bar.pow(2))
+
+
 if __name__ == "__main__":
-    model = GLUETransformer_SGD.load_from_checkpoint('rte_epoch=09_accuracy=0.606.ckpt')
+    args = parse_config('exp2.yaml')
+    path = args.path
+    model = GLUETransformer_SGD.load_from_checkpoint(path)
 
     # data module
     datamodule = GLUEDataModule(
@@ -125,6 +161,16 @@ if __name__ == "__main__":
         eval_batch_size=model.hparams.eval_batch_size,
     )
 
-    swag_trainer = pl.Trainer(callbacks=[StochasticWeightAveragingGaussian()], max_epochs=1)
+    swa_callback = StochasticWeightAveraging()
+    swag_callback = SWAGDiag(c=args.c)
+    swag_trainer = pl.Trainer(callbacks=[swa_callback, swag_callback],
+                              max_epochs=args.max_epochs)
     swag_trainer.fit(model, datamodule)
 
+    vec_diag = swag_callback.theta_bar_squared - swag_callback.theta_bar.pow(2)
+
+    print(torch.norm(vec_diag, p=2))
+    t = time.strftime("%Y,%m,%d,%H,%M,%S").split(',')
+    save_path = t[2] + t[3] + '_' + path.split('/')[-1]
+    with open(f'{save_path}.pickle', 'wb') as handle:
+        pickle.dump(vec_diag, handle)

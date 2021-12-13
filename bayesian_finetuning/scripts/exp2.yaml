@@ -1,0 +1,23 @@
+# python bayesian_finetuning/bin/train.py --config bayesian_finetuning/configs/tiny_rte.yaml
+
+wandb_project_name: 'bayesian_finetuning_exp2'
+
+training:
+  default_root_dir: '.'
+  log_every_n_steps: 10
+#  val_check_interval: 50
+#  limit_val_batches: 0
+  gpus: 0 #1
+  accumulate_grad_batches: 1
+  max_epochs: 3
+  data_workers: 4
+  train_batch_size: 64
+  eval_batch_size: 64
+
+prediction:
+  model_path: ''
+
+hparams:
+  path: models/stsb_epoch=51_pearson=0.860.ckpt
+  c: 1
+  k: 10
