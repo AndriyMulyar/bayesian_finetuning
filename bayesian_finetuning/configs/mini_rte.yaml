@@ -20,7 +20,9 @@ prediction:
 
 hparams:
   model_name_or_path: prajjwal1/bert-mini
+  random_init: False
   task_name: rte
+  eval_metric: accuracy
   seed: 1234
   learning_rate: 2e-5
   precision: 32

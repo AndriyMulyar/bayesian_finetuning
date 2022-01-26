@@ -24,6 +24,7 @@ class GLUETransformer(LightningModule):
         train_batch_size: int = 32,
         eval_batch_size: int = 32,
         eval_splits: Optional[list] = None,
+        random_init=False,
         **kwargs,
     ):
         super().__init__()
@@ -31,7 +32,11 @@ class GLUETransformer(LightningModule):
         self.save_hyperparameters()
 
         self.config = AutoConfig.from_pretrained(model_name_or_path, num_labels=num_labels)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, config=self.config)
+
+        if random_init:
+            self.model = AutoModelForSequenceClassification.from_config(config=self.config)
+        else:
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, config=self.config)
 
         self.metric = datasets.load_metric(
             "glue", self.hparams.task_name, experiment_id=datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -50,7 +55,7 @@ class GLUETransformer(LightningModule):
         outputs = self(**batch)
         val_loss, logits = outputs[:2]
 
-        if self.hparams.num_labels >= 1:
+        if self.hparams.num_labels > 1:
             preds = torch.argmax(logits, axis=1)
         elif self.hparams.num_labels == 1:
             preds = logits.squeeze()
